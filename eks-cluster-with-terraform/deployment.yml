@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alex-smith-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: alex-smith
+        image: 257070983248.dkr.ecr.us-east-1.amazonaws.com/utc-app-qa:v.9
+        ports:
+        - containerPort: 8082
+      imagePullSecrets:
+        - name: ecr-registry-secret

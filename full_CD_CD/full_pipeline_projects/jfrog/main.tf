@@ -56,10 +56,10 @@ resource "aws_instance" "JfrogInstance" {
   }
   
 }
-/*
+
 # Code to create Ami for our Jfrog server
 
-
+/*
 module "ami" {
   source = "../ami-creation"
   source_id = aws_instance.JfrogInstance.id

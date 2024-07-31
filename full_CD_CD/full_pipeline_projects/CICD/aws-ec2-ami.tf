@@ -1,20 +1,23 @@
 # configured aws provider with proper credentials
 provider "aws" {
-  region  = var.aws_region
-  profile = var.profile
+  region    = var.aws_region
+  profile   = var.profile
 }
 
 
 # launch the jenkins instance using ami : you can change this ami id with your own ami. 
 resource "aws_instance" "jenkins_ec2_instance" {
   ami                    = var.jenkins_ami
-  instance_type          = var.aws_instance_type
+  user_data = file("jenkinssetup.sh")
+  instance_type          = "t2.medium"
   vpc_security_group_ids = [aws_security_group.jenkins_security_gp.id]
   key_name               = aws_key_pair.instance_key.key_name
-  iam_instance_profile   = aws_iam_instance_profile.jenkins_instance_profile.name
-
+  iam_instance_profile = aws_iam_instance_profile.jenkins_instance_profile.name
+  root_block_device {
+    volume_size = 30
+  }
   tags = {
-    Name  = "jenkins-server"
+    Name = "jenkins-server"
     Owner = "Hermann90"
   }
 }
@@ -22,50 +25,54 @@ resource "aws_instance" "jenkins_ec2_instance" {
 
 # launch the jfrog instance using ami
 resource "aws_instance" "jfrog_ec2_instance" {
-  count                  = var.jfrog_server ? 1 : 0
+  count = var.jfrog_server ? 1 : 0
   ami                    = var.jfrog_ami
+  user_data = file("jfrogsetup.sh")
   instance_type          = "t2.medium"
   vpc_security_group_ids = [aws_security_group.jfrog_security_gp.id]
   key_name               = aws_key_pair.instance_key.key_name
-  /* user_data = <<-EOF
+ /* user_data = <<-EOF
     #!/bin/bash
     /home/ec2-user/jfrog/bin/jfrog start
   EOF
 */
+root_block_device {
+    volume_size = 30
+  }
   tags = {
-    Name  = "jfrog-server"
+    Name = "jfrog-server"
     Owner = "Hermann90"
   }
-
+  
 }
 
 resource "aws_instance" "qa_server" {
-  count                  = var.qa_server ? 1 : 0
-  ami                    = data.aws_ami.ami.id
-  instance_type          = "t2.micro"
+  count = var.qa_server ? 1 : 0
+  ami   = data.aws_ami.ami.id
+  instance_type = "t2.micro"
   vpc_security_group_ids = [aws_security_group.qa_uat_security_gp.id]
-  key_name               = aws_key_pair.instance_key.key_name
-  user_data              = file("qa_uat.sh")
+  key_name = aws_key_pair.instance_key.key_name
+  user_data            = file("qa_uat.sh")
   tags = {
-    Name  = "qa-server"
+    Name = "qa-server"
     Owner = "Hermann90"
   }
 
 }
 
 resource "aws_instance" "uat_server" {
-  count                  = var.uat_server ? 1 : 0
-  ami                    = data.aws_ami.ami.id
-  instance_type          = "t2.micro"
-  iam_instance_profile   = aws_iam_instance_profile.jenkins_instance_profile.name
+  count = var.uat_server ? 1 : 0
+  ami   = data.aws_ami.ami.id
+  instance_type = "t2.micro"
+  iam_instance_profile = aws_iam_instance_profile.jenkins_instance_profile.name 
   vpc_security_group_ids = [aws_security_group.qa_uat_security_gp.id]
-  key_name               = aws_key_pair.instance_key.key_name
-  user_data              = file("qa_uat.sh")
-  tags = {
-    Name  = "uat-server"
+  key_name = aws_key_pair.instance_key.key_name
+  user_data            = file("qa_uat.sh")
+   tags = {
+    Name = "uat-server"
     Owner = "Hermann90"
   }
-
+  
 }
 
 # Code to create Ami for our Jenkins server
@@ -90,6 +97,7 @@ output "jenkins_ami_id" {
   value = module.jenkins-ami.ami_id
 }
 */
+
 
 ## terraform state list 
 ### terraform state rm module.jenkins-ami.aws_ami_from_instance.ami
